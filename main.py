@@ -88,7 +88,7 @@ import os
 old_second = 70
 
 #creating log dir
-if not os.path.exists('log'):
+if not os.path.exists('logs'):
     os.mkdir('logs')
 
 log = datetime.now().strftime("%m-%d-%Y")
