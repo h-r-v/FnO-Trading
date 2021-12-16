@@ -1,7 +1,7 @@
 #---------------------------------CLI---------------------------------
-sandbox = False
-get_access_only = True
-access_code = "1111"
+sandbox = False #True if you want to use sandbox enviorment. False to use production enviorment.
+get_access_only = True #True if you want to generate the OTP onlt. Flase if you want to execute the entire program.
+access_code = "5401" #OTP
 
 if sandbox==False:
     userid = "NT1945"
@@ -48,7 +48,7 @@ cash_url = 'https://preferred.kotaksecurities.com/security/production/TradeApiIn
 fno_tokens = requests.get(fno_url)
 cash_tokens = requests.get(cash_url)
 
-if fno_tokens.status_code!=200 or cash_tokens!=200:
+if fno_tokens.status_code!=200 or cash_tokens.status_code!=200:
     print('Could not get token data.')
     exit()
 else:
@@ -73,8 +73,8 @@ import pandas as pd
 fno_df = pd.DataFrame( fno_tokens[1:], columns=fno_tokens[0])
 cash_df = pd.DataFrame( cash_tokens[1:], columns=cash_tokens[0])
 
-print("FnO DF shape: ",fno_df.shape())
-print("Cash DF shape: ",cash_df.shape())
+print("FnO DF shape: ",fno_df.shape)
+print("Cash DF shape: ",cash_df.shape)
 
 #---------------------------------BANKNIFTY TOKEN---------------------------------
 banknifty_token = int(cash_df[cash_df.instrumentName=='NIFTY BANK'].instrumentToken.values[0])
@@ -94,22 +94,38 @@ if not os.path.exists('logs'):
 log = datetime.now().strftime("%m-%d-%Y")
 log = open(f"logs/{log}.txt", "a")
 
+first930 = True
+firstTL = True
+
 while True:
     
     hour, minute, second = [int(i) for i in datetime.now().strftime("%H.%M.%S").split('.')]
     
     if(old_second!=second):
-        print(hour,minute,second)
+
+        #log and print time loop start
+        if firstTL==True:
+            log.write(f'Time loop started @{hour}:{minute}:{second}')
+            print(f'Time loop started')
+            firstTL=False
 
         #update time
         old_second=second
         
-        #Before 9:30am
-        if(hour==9 and minute==29 and int(second)==58):
-            print("Executing before 9:30am procedure.")
+        #At 9:25am
+        if(hour==9 and minute==25 and int(second)==00):
+
+            #log and print start of 9:25am procedure
+            log.write(f"Executing before 9:25am procedure @{hour}:{minute}:{second}")
+            print(f"Executing before 9:25am procedure @{hour}:{minute}:{second}")
+
             #get banknifty atm
             banknity_atm = get_atm(banknifty_token, client)
             
+            #log and print strike price
+            log.write(f"BNF ATM: {banknity_atm}")
+            print(f"BNF ATM: {banknity_atm}")
+
             #get pe and ce token at that atm
             banknity_token_pe, banknity_token_ce = get_pe_ce_token(banknity_atm, fno_df)
 
@@ -119,66 +135,104 @@ while True:
             banknifty_ce_wrong = False
             banknifty_pe_wrong = False
 
+            #log and print end of 9:25am procedure
+            log.write(f"Before 9:25am procedure completed @{hour}:{minute}:{second}")
+            print(f"Before 9:25am procedure completed @{hour}:{minute}:{second}")
+
         #At 9:30am
         if(hour==9 and minute==30 and int(second)==0):
-            print("Executing at 9:30am procedure.")
+            
+            #log and print start of 9:30am procedure
+            log.write(f"Executing at 9:30am procedure @{hour}:{minute}:{second}")
+            print(f"Executing at 9:30am procedure @{hour}:{minute}:{second}")
+            
             #get ce and pe quote
             banknifty_ce_ltp_930 = get_quote(banknity_token_ce, client)
             banknifty_pe_ltp_930 = get_quote(banknity_token_pe, client)
 
+            #log and print CE LTP @9:30am
+            log.write(f'BNF {banknity_atm} CE 9:30 am LTP: {banknifty_ce_ltp_930}')
+            print(f'BNF {banknity_atm} CE 9:30 am LTP: {banknifty_ce_ltp_930}')
+            
+            #log and print PE LTP @9:30am
+            log.write(f'BNF {banknity_atm} PE 9:30 am LTP: {banknifty_pe_ltp_930}')
+            print(f'BNF {banknity_atm} PE 9:30 am LTP: {banknifty_pe_ltp_930}')
+
+            #get execution price
             banknifty_ce_ex = 0.9*banknifty_ce_ltp_930
             banknifty_pe_ex = 0.9*banknifty_pe_ltp_930
+
+            #log and print CE execution price
+            log.write(f'BNF {banknity_atm} CE execution price set @{banknifty_ce_ex}')
+            print(f'BNF {banknity_atm} CE execution price set @{banknifty_ce_ex}')
+            
+            #log and print CE execution price
+            log.write(f'BNF {banknity_atm} PE execution price set @{banknifty_pe_ex}')
+            print(f'BNF {banknity_atm} PE execution price set @{banknifty_pe_ex}')
+
+            #log and print end of 9:30am procedure
+            log.write(f"At 9:30am procedure completed @{hour}:{minute}:{second}")
+            print(f"At 9:30am procedure completed @{hour}:{minute}:{second}")
         
-        print("Executing after 9:30am procedure.")
         #After 9:30am
         if(hour>=9 and minute>=30):
+            if first930==True:
+                #log and print start of after 9:30am procedure
+                log.write(f"Executing after 9:30am procedure @{hour}:{minute}:{second}")
+                print(f"Executing after 9:30am procedure @{hour}:{minute}:{second}")
+                first930 = False
+
+            #Get LTP for CE and PE every second after 9:30am
             banknifty_ce_ltp = get_quote(banknity_token_ce, client)
             banknifty_pe_ltp = get_quote(banknity_token_pe, client)
 
+            #sell ce when execution price is hit for the first time
             if (banknifty_ce_ltp<=banknifty_ce_ex and banknifty_ce_hit==False):
-                #sell ce
-                log.write(f'SELL BNF {banknity_atm} CE executed @{hour}:{minute}:{second}\n')
-                print(f'SELL BNF {banknity_atm} CE executed @{hour}:{minute}:{second}')
-                client.place_order(order_type = "MIS", instrument_token = banknity_token_ce, transaction_type = "SELL", quantity = 25, price = 0)
+                log.write(f'SELL BNF {banknity_atm} CE executed @{hour}:{minute}:{second} @{banknifty_ce_ltp}')
+                print(f'SELL BNF {banknity_atm} CE executed @{hour}:{minute}:{second} @{banknifty_ce_ltp}')
+                #client.place_order(order_type = "MIS", instrument_token = banknity_token_ce, transaction_type = "SELL", quantity = 25, price = 0)
                 banknifty_ce_hit = True
 
+            #buy ce if reversal
             if (banknifty_ce_hit==True and banknifty_ce_ltp>=1.25*banknifty_ce_ex):
-                #buy ce
-                log.write(f'BUY BNF {banknity_atm} CE executed @{hour}:{minute}:{second}\n')
-                print(f'BUY BNF {banknity_atm} CE executed @{hour}:{minute}:{second}')
-                client.place_order(order_type = "MIS", instrument_token = banknity_token_ce, transaction_type = "BUY", quantity = 25, price = 0)
+                log.write(f'BUY BNF {banknity_atm} CE executed @{hour}:{minute}:{second} @{banknifty_ce_ltp}')
+                print(f'BUY BNF {banknity_atm} CE executed @{hour}:{minute}:{second} @{banknifty_ce_ltp}')
+                #client.place_order(order_type = "MIS", instrument_token = banknity_token_ce, transaction_type = "BUY", quantity = 25, price = 0)
                 banknifty_ce_wrong = True
 
+            #sell pe when execution price is hit for the first time
             if (banknifty_pe_ltp<=banknifty_pe_ex and banknifty_pe_hit==False):
-                #sell pe
-                log.write(f'SELL BNF {banknity_atm} PE executed @{hour}:{minute}:{second}')
-                print(f'SELL BNF {banknity_atm} PE executed @{hour}:{minute}:{second}')
-                client.place_order(order_type = "MIS", instrument_token = banknity_token_pe, transaction_type = "SELL", quantity = 25, price = 0)
+                log.write(f'SELL BNF {banknity_atm} PE executed @{hour}:{minute}:{second} @{banknifty_pe_ltp}')
+                print(f'SELL BNF {banknity_atm} PE executed @{hour}:{minute}:{second} @{banknifty_pe_ltp}')
+                #client.place_order(order_type = "MIS", instrument_token = banknity_token_pe, transaction_type = "SELL", quantity = 25, price = 0)
                 banknifty_pe_hit = True
 
+            #buy pe if reversal
             if (banknifty_pe_hit==True and banknifty_pe_ltp>=1.25*banknifty_pe_ex):
-                #buy pe
-                log.write(f'BUY BNF {banknity_atm} PE executed @{hour}:{minute}:{second}')
-                print(f'BUY BNF {banknity_atm} PE executed @{hour}:{minute}:{second}')
-                client.place_order(order_type = "MIS", instrument_token = banknity_token_pe, transaction_type = "BUY", quantity = 25, price = 0)
+                log.write(f'BUY BNF {banknity_atm} PE executed @{hour}:{minute}:{second} @{banknifty_pe_ltp}')
+                print(f'BUY BNF {banknity_atm} PE executed @{hour}:{minute}:{second} @{banknifty_pe_ltp}')
+                #client.place_order(order_type = "MIS", instrument_token = banknity_token_pe, transaction_type = "BUY", quantity = 25, price = 0)
                 banknifty_pe_wrong = True
 
             #At 3pm
             if(hour==15 and minute==0 and int(second)==0):
+                #buy ce to square off
                 if( banknifty_ce_hit==True and banknifty_ce_wrong==False ):
-                    #buy ce
-                    log.write(f'BUY BNF {banknity_atm} CE executed @{hour}:{minute}:{second}')
-                    print(f'BUY BNF {banknity_atm} CE executed @{hour}:{minute}:{second}')
-                    client.place_order(order_type = "MIS", instrument_token = banknity_token_ce, transaction_type = "BUY", quantity = 25, price = 0)
+                    log.write(f'SQUAREOFF BUY BNF {banknity_atm} CE executed @{hour}:{minute}:{second} @{banknifty_ce_ltp}')
+                    print(f'SQUAREOFF BUY BNF {banknity_atm} CE executed @{hour}:{minute}:{second} @{banknifty_ce_ltp}')
+                    #client.place_order(order_type = "MIS", instrument_token = banknity_token_ce, transaction_type = "BUY", quantity = 25, price = 0)
 
+                #buy pe to square off
                 if( banknifty_pe_hit==True and banknifty_pe_wrong==False ):
-                    #buy pe
-                    log.write(f'BUY BNF {banknity_atm} CE executed @{hour}:{minute}:{second}')
-                    print(f'BUY BNF {banknity_atm} PE executed @{hour}:{minute}:{second}')
-                    client.place_order(order_type = "MIS", instrument_token = banknity_token_pe, transaction_type = "BUY", quantity = 25, price = 0)  
+                    log.write(f'SQUAREOFF BUY BNF {banknity_atm} PE executed @{hour}:{minute}:{second} @{banknifty_pe_ltp}')
+                    print(f'SQUAREOFF BUY BNF {banknity_atm} PE executed @{hour}:{minute}:{second} @{banknifty_pe_ltp}')
+                    #client.place_order(order_type = "MIS", instrument_token = banknity_token_pe, transaction_type = "BUY", quantity = 25, price = 0)  
             
             #At 3:05pm
             if(hour==15 and minute==5 and int(second)==0):
+                #log and print end of after 9:30am procedure
+                log.write(f"After 9:30am procedure completed @{hour}:{minute}:{second}")
+                print(f"After 9:30am procedure completed @{hour}:{minute}:{second}")
                 log.close()
                 exit()          
 
