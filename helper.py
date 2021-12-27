@@ -32,4 +32,6 @@ def get_quote(instrument_token, client):
     else:
         assert True==False
 
+    ltp = float(ltp)
+
     return ltp
