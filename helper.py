@@ -1,3 +1,6 @@
+from datetime import datetime
+import json
+
 # get ltp and atm
 def get_atm(instrument_token, client):
     banknity_ltp = client.quote(instrument_token = instrument_token, quote_type = "LTP")
@@ -35,3 +38,18 @@ def get_quote(instrument_token, client):
     ltp = float(ltp)
 
     return ltp
+
+#log info
+def log_info(opfile, message, typ='UNK', time=None, display=True):
+    
+    if time==None:
+        time = datetime.now().strftime("%H:%M:%S")
+    elif isinstance(time,list):
+        ':'.join([ str(i) for i in time])
+
+    final_message = json.dumps({'message':message, 'type':typ, 'time':time})+'\n'
+    
+    if display:
+        print(f'{time} : {message} : {typ}')
+    
+    opfile.write(final_message)
