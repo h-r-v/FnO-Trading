@@ -1,7 +1,7 @@
 #---------------------------------CLI---------------------------------
 sandbox = False #True if you want to use sandbox enviorment. False to use production enviorment.
 get_access_only = False #True if you want to generate the OTP onlt. Flase if you want to execute the entire program.
-access_code = "2762" #OTP
+access_code = "2210" #OTP
 
 if sandbox==False:
     userid = "NT1945"
@@ -96,7 +96,7 @@ log = datetime.now().strftime("%m-%d-%Y")
 log = open(f"logs/{log}.txt", "a")
 
 #main loop execution time
-_hour, _min, _sec = [int(i) for i in '14.54.00'.split('.')]
+_hour, _min, _sec = [int(i) for i in '14.31.00'.split('.')]
 
 #first execution flags
 firstafter930 = True
@@ -106,11 +106,16 @@ firstat930 = True
 firstat3 = True
 firstat305 = True
 
+#p&l vars
+sell = 0
+buy = 0
+
 while True:
     
     hour, minute, second = [int(i) for i in datetime.now().strftime("%H.%M.%S").split('.')]
     
     if( (old_second+3)%60==second or firstTL):
+        print(f'time loop working @{hour}:{minute}:{second}')
 
         #log and print time loop start
         if firstTL==True:
@@ -122,6 +127,7 @@ while True:
         
         #At 9:25am
         if(hour==_hour and minute==_min-1 and firstat925==True):
+            print(f'at 9:25 working @{hour}:{minute}:{second}')
 
             #log and print start of 9:25am procedure
             log_info(log, 'Executing before 9:25am procedure', 'sys_alert')
@@ -147,7 +153,8 @@ while True:
 
         #At 9:30am
         if(hour==_hour and minute==_min and firstat930==True):
-            
+            print(f'at 9:30 working @{hour}:{minute}:{second}')
+
             #log and print start of 9:30am procedure
             log_info(log,'Executing at 9:30am procedure','sys_alert')
             
@@ -178,7 +185,9 @@ while True:
             firstat930=False
 
         #After 9:30am
-        if(hour>=_hour and minute>=_min):
+        if(hour>=_hour and firstat930==False):
+            print(f'After 9:30 working @{hour}:{minute}:{second}')
+
             if firstafter930==True:
                 #log and print start of after 9:30am procedure
                 log_info(log, "Executing after 9:30am procedure", 'sys_alert')
@@ -194,45 +203,56 @@ while True:
             #sell ce when execution price is hit for the first time
             if (banknifty_ce_ltp<=banknifty_ce_ex and banknifty_ce_hit==False):
                 log_info(log, f'SELL BNF {banknity_atm} CE executed @{banknifty_ce_ltp}', 'sell')
+                sell = banknifty_ce_ltp
                 #client.place_order(order_type = "MIS", instrument_token = banknity_token_ce, transaction_type = "SELL", quantity = 25, price = 0)
                 banknifty_ce_hit = True
 
             #buy ce if reversal
             if (banknifty_ce_hit==True and banknifty_ce_ltp>=1.25*banknifty_ce_ex and banknifty_ce_wrong==False):
                 log_info(log, f'BUY BNF {banknity_atm} CE executed @{banknifty_ce_ltp}', 'buy')
+                buy = banknifty_ce_ltp
                 #client.place_order(order_type = "MIS", instrument_token = banknity_token_ce, transaction_type = "BUY", quantity = 25, price = 0)
                 banknifty_ce_wrong = True
 
             #sell pe when execution price is hit for the first time
             if (banknifty_pe_ltp<=banknifty_pe_ex and banknifty_pe_hit==False):
                 log_info(log, f'SELL BNF {banknity_atm} PE executed @{banknifty_pe_ltp}', 'sell')
+                sell = banknifty_pe_ltp
                 #client.place_order(order_type = "MIS", instrument_token = banknity_token_pe, transaction_type = "SELL", quantity = 25, price = 0)
                 banknifty_pe_hit = True
 
             #buy pe if reversal
             if (banknifty_pe_hit==True and banknifty_pe_ltp>=1.25*banknifty_pe_ex and banknifty_pe_wrong==False):
                 log_info(log, f'BUY BNF {banknity_atm} PE executed @{banknifty_pe_ltp}', 'buy')
+                buy = banknifty_pe_ltp
                 #client.place_order(order_type = "MIS", instrument_token = banknity_token_pe, transaction_type = "BUY", quantity = 25, price = 0)
                 banknifty_pe_wrong = True
 
             #At 3pm
-            if(hour==15 and minute==0 and firstat3==True):
+            if(hour==15 and minute==3 and firstat3==True):
+                log_info(log, 'At 3pm procedure started', 'sys_alert')
+
                 #buy ce to square off
                 if( banknifty_ce_hit==True and banknifty_ce_wrong==False ):
                     log_info(log, f'SQUAREOFF BUY BNF {banknity_atm} CE executed @{banknifty_ce_ltp}', 'squareoff')
+                    buy = banknifty_ce_ltp
                     #client.place_order(order_type = "MIS", instrument_token = banknity_token_ce, transaction_type = "BUY", quantity = 25, price = 0)
 
                 #buy pe to square off
                 if( banknifty_pe_hit==True and banknifty_pe_wrong==False ):
                     log_info(log, f'SQUAREOFF BUY BNF {banknity_atm} PE executed @{banknifty_pe_ltp}', 'squareoff')
+                    buy = banknifty_pe_ltp
                     #client.place_order(order_type = "MIS", instrument_token = banknity_token_pe, transaction_type = "BUY", quantity = 25, price = 0)  
+
+                log_info(log, 'After 3pm procedure completed', 'sys_alert')
 
                 firstat3 = False
             
-            #At 3:05pm
-            if(hour==15 and minute==5 and firstat305==True):
+            #After 3pm
+            if( firstat3==False and firstat305==True):
                 #log and print end of at 3:05pm procedure
-                log_info(log, 'At 3:05pm procedure completed', 'sys_alert')
+                log_info(log, f'p&l today @{sell-buy}')
+                log_info(log, 'After 3pm procedure completed', 'sys_alert')
                 log.close()
                 firstat305==False
                 exit()          
