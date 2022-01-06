@@ -4,7 +4,7 @@ Usage:
 
 Options:
     --otp=<otp>  OTP [default: 1111], ignored if get_otp is chosen
-    --sandbox    use sandbox enviorment
+    --prod    use sandbox enviorment
     --get_otp    us to generate otp.
 '''
 #---------------------------------CLI---------------------------------
@@ -100,13 +100,11 @@ import os
 
 old_second = 70
 
-#creating log dir
-if not os.path.exists('logs'):
-    os.mkdir('logs')
+#get log dir
+logdir = log_dir()
 
 #creating log file
-log = datetime.now().strftime("%m-%d-%Y")
-log = open(f"logs/{log}.txt", "a")
+log = open(os.path.join(logdir,'trade.txt'), "a")
 
 #main loop execution time
 _hour, _min, _sec = [int(i) for i in '14.31.00'.split('.')]

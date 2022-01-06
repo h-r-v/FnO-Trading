@@ -1,5 +1,6 @@
 from datetime import datetime
 import json
+import os
 
 # get ltp and atm
 def get_atm(instrument_token, client):
@@ -53,3 +54,21 @@ def log_info(opfile, message, typ='UNK', time=None, display=True):
         print(f'{time} : {message} : {typ}')
     
     opfile.write(final_message)
+
+#return log dir of the day
+def log_dir():
+    #creating log dir
+    if not os.path.exists('logs'):
+        os.mkdir('logs')
+
+    #date
+    log = datetime.now().strftime("%m-%d-%Y")
+
+    #creating date subdir
+    if not os.path.exists(os.path.join('logs',log)):
+        os.mkdir(os.path.join('logs',log))
+
+    #log dir for the day
+    logdir = os.path.join('logs',log)
+
+    return logdir
