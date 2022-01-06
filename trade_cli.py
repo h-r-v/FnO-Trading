@@ -1,11 +1,12 @@
 usage='''
 Usage:
-    main.py [--sandbox] [--get_otp] [--otp=<otp>]
+    main.py [--sandbox] [--get_otp] [--otp=<otp>] [--time=<time>]
 
 Options:
-    --otp=<otp>  OTP [default: 1111], ignored if get_otp is chosen
-    --prod    use sandbox enviorment
-    --get_otp    us to generate otp.
+    --otp=<otp>     OTP [default: 1111], ignored if get_otp is chosen
+    --prod          use sandbox enviorment
+    --get_otp       us to generate otp.
+    --time=<time>   main loop start time in h-m format. [default: 9-30]  
 '''
 #---------------------------------CLI---------------------------------
 from docopt import docopt
@@ -15,6 +16,7 @@ args = docopt(usage)
 sandbox = args['--sandbox'] #True if you want to use sandbox enviorment. False to use production enviorment.
 get_access_only = args['--get_otp'] #True if you want to generate the OTP onlt. Flase if you want to execute the entire program.
 access_code = args['--otp'] #OTP
+main_loop_start_time = args['--time']
 
 if sandbox==False:
     userid = "NT1945"
@@ -107,7 +109,7 @@ logdir = log_dir()
 log = open(os.path.join(logdir,'trade.txt'), "a")
 
 #main loop execution time
-_hour, _min, _sec = [int(i) for i in '9.30.00'.split('.')]
+_hour, _min = [int(i) for i in main_loop_start_time.split('-')]
 
 #first execution flags
 firstafter930 = True
