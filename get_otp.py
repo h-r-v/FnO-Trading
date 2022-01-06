@@ -43,8 +43,13 @@ def get_otp():
         email_message = email.message_from_bytes(bytes_data)
 
         if email_message['date'].split()[:3]==today.split():
-            body = email_message.as_string()
-            otp = body[body.find('XXXRN')+29:body.find('XXXRN')+33]
+            for part in email_message.walk():
+                if part.get_content_type() == 'text/html':
+                    body = email_message.as_string()
+                    otp = body[body.find('XXXRN')+29:body.find('XXXRN')+33]
+                    break
+        
+        if otp is not None:
             break
 
     mail.close()
