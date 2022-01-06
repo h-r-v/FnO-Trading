@@ -5,8 +5,8 @@ import time
 from datetime import datetime
 
 #program launch timings
-main_program_start_time = '19-46'
-main_loop_start_time = '19-50'
+main_program_start_time = '9-25'
+main_loop_start_time = '9-30'
 
 #controller program start hr and min
 _hr, _min = [int(i) for i in main_program_start_time.split('-')]
