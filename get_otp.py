@@ -45,7 +45,7 @@ def get_otp():
         if email_message['date'].split()[:3]==today.split():
             for part in email_message.walk():
                 if part.get_content_type() == 'text/html':
-                    body = email_message.as_string()
+                    body = email_message.as_bytes().decode(encoding='ISO-8859-1')
                     otp = body[body.find('XXXRN')+29:body.find('XXXRN')+33]
                     break
         
