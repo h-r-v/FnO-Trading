@@ -107,7 +107,7 @@ logdir = log_dir()
 log = open(os.path.join(logdir,'trade.txt'), "a")
 
 #main loop execution time
-_hour, _min, _sec = [int(i) for i in '14.31.00'.split('.')]
+_hour, _min, _sec = [int(i) for i in '9.30.00'.split('.')]
 
 #first execution flags
 firstafter930 = True
@@ -137,7 +137,7 @@ while True:
         old_second=second
         
         #At 9:25am
-        if(hour==_hour and minute==_min-1 and firstat925==True):
+        if(hour==_hour and minute==_min-2 and firstat925==True):
             print(f'at 9:25 working @{hour}:{minute}:{second}')
 
             #log and print start of 9:25am procedure
