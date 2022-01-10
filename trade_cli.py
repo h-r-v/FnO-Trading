@@ -170,9 +170,6 @@ while True:
 
             #log and print start of 9:30am procedure
             log_info(log,'Executing at 9:30am procedure','sys_alert')
-            
-            #TEMP
-            print(banknity_token_ce)
 
             #get ce and pe quote
             banknifty_ce_ltp_930 = get_quote(banknity_token_ce, client)
