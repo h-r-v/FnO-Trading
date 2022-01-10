@@ -14,8 +14,8 @@ def get_atm(instrument_token, client):
     banknity_atm = round(banknity_ltp, -2)
 
     #banknity_atm = 37100
-
-    print('BANK NIFTY ATM:', banknity_atm)
+    #print('BANK NIFTY ATM:', banknity_atm)
+    
     return int(banknity_atm)
 
 # get pe ce tokens for a strike
@@ -24,8 +24,9 @@ def get_pe_ce_token(banknity_atm, fno_df):
     banknity_token_pe = int(fno_df[fno_df.optionType=='PE']['instrumentToken'].values[0])
     banknity_token_ce = int(fno_df[fno_df.optionType=='CE']['instrumentToken'].values[0])
 
-    print(f"BANK NIFTY {banknity_atm} PE TOKEN:",banknity_token_pe)
-    print(f"BANK NIFTY {banknity_atm} CE TOKEN:",banknity_token_ce)
+    #print(f"BANK NIFTY {banknity_atm} PE TOKEN:",banknity_token_pe)
+    #print(f"BANK NIFTY {banknity_atm} CE TOKEN:",banknity_token_ce)
+    
     return banknity_token_pe,banknity_token_ce
 
 #check and get quote
@@ -51,7 +52,7 @@ def log_info(opfile, message, typ='UNK', time=None, display=True):
     final_message = json.dumps({'message':message, 'type':typ, 'time':time})+'\n'
     
     if display:
-        print(f'{time} : {message} : {typ}')
+        print(f'{time} : {message}')
     
     opfile.write(final_message)
 

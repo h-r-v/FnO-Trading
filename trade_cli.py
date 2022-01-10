@@ -8,8 +8,9 @@ Options:
     --get_otp       us to generate otp.
     --time=<time>   main loop start time in h-m format. [default: 9-30]  
 '''
-#---------------------------------CLI---------------------------------
+#---------------------------------CLI & INIT---------------------------------
 from docopt import docopt
+from helper import *
 
 args = docopt(usage)
 
@@ -17,6 +18,12 @@ sandbox = args['--sandbox'] #True if you want to use sandbox enviorment. False t
 get_access_only = args['--get_otp'] #True if you want to generate the OTP onlt. Flase if you want to execute the entire program.
 access_code = args['--otp'] #OTP
 main_loop_start_time = args['--time']
+
+#get log dir
+logdir = log_dir()
+
+#creating log file
+log = open(os.path.join(logdir,'trade.txt'), "a")
 
 if sandbox==False:
     userid = "NT1945"
@@ -38,20 +45,28 @@ try:
     client = KSTradeApi(access_token = access_token, userid = userid, \
                     consumer_key = consumer_key, ip = "127.0.0.1", app_id = "DefaultApplication", host = host)
     client.login(password=password)
-    print('OTP generated.')
+    log_info(log, 'OTP Generated', 'otp_gen_succ')
 except Exception as e:
-    print('Could not generate OTP. Error: ', e)
+    log_info(log, f'Could not generate OTP. Error: {e}', 'otp_gen_error')
+    log.close()
+    exit()
 
-#---------------------------------OTP verification---------------------------------
+#---------------------------------OTP VERIFICATION---------------------------------
 if get_access_only==True:
     exit()
 
-if sandbox==True:
-    client.session_2fa(access_code = '1111')
-else:
-    client.session_2fa(access_code = access_code)
+try:
+    if sandbox==True:
+        client.session_2fa(access_code = '1111')
+    else:
+        client.session_2fa(access_code = access_code)
+    log_info(log, 'OTP Verified', 'otp_ver_succ')
+except Exception as e:
+    log_info(log, f'Could not verify OTP. Error: {e}', 'otp_ver_error')
+    log.close()
+    exit()
 
-#---------------------------------Get token list---------------------------------
+#---------------------------------Get TOKEN LIST---------------------------------
 from datetime import datetime
 import requests
 fno_url = 'https://preferred.kotaksecurities.com/security/production/TradeApiInstruments_FNO_'+datetime.now().strftime("%d_%m_%Y")+'.txt'
@@ -64,10 +79,10 @@ fno_tokens = requests.get(fno_url)
 cash_tokens = requests.get(cash_url)
 
 if fno_tokens.status_code!=200 or cash_tokens.status_code!=200:
-    print('Could not get token data.')
+    log_info(log, 'Could not get token data.', 'token_error')
     exit()
 else:
-    print('Token data accquired.')
+    log_info(log, 'Token data accquired.', 'token_succ')
 
 fno_tokens = fno_tokens.text
 cash_tokens = cash_tokens.text
@@ -78,9 +93,10 @@ cash_tokens = cash_tokens.split('\n')
 cash_tokens = [i.strip().split('|') for i in cash_tokens]
 
 if len(fno_tokens) <= 1 or len(cash_tokens) <= 1:
-    assert True==False, "Token list not valid"
+    log_info(log, "Token list not valid", 'token_error')
+    exit()
 else:
-    print('Token data successful.')
+    log_info(log, 'Token data successful.', 'token_succ')
 
 #initializing DataFrames
 import pandas as pd
@@ -88,25 +104,18 @@ import pandas as pd
 fno_df = pd.DataFrame( fno_tokens[1:], columns=fno_tokens[0])
 cash_df = pd.DataFrame( cash_tokens[1:], columns=cash_tokens[0])
 
-print("FnO DF shape: ",fno_df.shape)
-print("Cash DF shape: ",cash_df.shape)
+log_info(log, f"FnO DF shape: {fno_df.shape}", 'df_shape')
+log_info(log, f"Cash DF shape: {cash_df.shape}", 'df_shape')
 
 #---------------------------------BANKNIFTY TOKEN---------------------------------
 banknifty_token = int(cash_df[cash_df.instrumentName=='NIFTY BANK'].instrumentToken.values[0])
-print("BANK NIFTY TOKEN:",banknifty_token)
+log_info(log, f"BANK NIFTY TOKEN: {banknifty_token}", 'bnf_token')
 
 #---------------------------------Time loop---------------------------------
 from datetime import datetime
-from helper import *
 import os
 
 old_second = 70
-
-#get log dir
-logdir = log_dir()
-
-#creating log file
-log = open(os.path.join(logdir,'trade.txt'), "a")
 
 #main loop execution time
 _hour, _min = [int(i) for i in main_loop_start_time.split('-')]
@@ -128,7 +137,7 @@ while True:
     hour, minute, second = [int(i) for i in datetime.now().strftime("%H.%M.%S").split('.')]
     
     if( (old_second+3)%60==second or firstTL):
-        print(f'time loop working @{hour}:{minute}:{second}')
+        print(f'{hour}:{minute}:{second} : Time loop working')
 
         #log and print time loop start
         if firstTL==True:
@@ -140,19 +149,20 @@ while True:
         
         #At 9:25am
         if(hour==_hour and minute==_min-2 and firstat925==True):
-            print(f'at 9:25 working @{hour}:{minute}:{second}')
-
             #log and print start of 9:25am procedure
             log_info(log, 'Executing before 9:25am procedure', 'sys_alert')
 
             #get banknifty atm
             banknity_atm = get_atm(banknifty_token, client)
             
-            #log and print strike price
+            
+            #log and print banknifty atm
             log_info(log,f"BNF ATM @{banknity_atm}",'strike_price')
 
-            #get pe and ce token at that atm
+            #get and log pe and ce token at that atm
             banknity_token_pe, banknity_token_ce = get_pe_ce_token(banknity_atm, fno_df)
+            log_info(log,f"BNF CE TOKEN @{banknity_token_ce}",'bnf_ce_token')
+            log_info(log,f"BNF PE TOKEN @{banknity_token_pe}",'bnf_pe_token')
 
             #initialize hit flags
             banknifty_ce_hit = False
@@ -166,8 +176,6 @@ while True:
 
         #At 9:30am
         if(hour==_hour and minute==_min and firstat930==True):
-            print(f'at 9:30 working @{hour}:{minute}:{second}')
-
             #log and print start of 9:30am procedure
             log_info(log,'Executing at 9:30am procedure','sys_alert')
 
@@ -199,7 +207,7 @@ while True:
 
         #After 9:30am
         if(hour>=_hour and firstat930==False):
-            print(f'After 9:30 working @{hour}:{minute}:{second}')
+            log_info(log, f'After 9:30 executed', 'sys_alert')
 
             if firstafter930==True:
                 #log and print start of after 9:30am procedure
