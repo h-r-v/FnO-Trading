@@ -148,7 +148,7 @@ while True:
         old_second=second
         
         #At 9:25am
-        if(hour==_hour and minute==_min-2 and firstat925==True):
+        if(hour==_hour and minute==_min-1 and firstat925==True):
             #log and print start of 9:25am procedure
             log_info(log, 'Executing before 9:25am procedure', 'sys_alert')
 
