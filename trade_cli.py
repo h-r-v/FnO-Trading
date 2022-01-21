@@ -132,6 +132,9 @@ firstat305 = True
 sell = 0
 buy = 0
 
+#number of shares
+quantity = 25
+
 while True:
     
     hour, minute, second = [int(i) for i in datetime.now().strftime("%H.%M.%S").split('.')]
@@ -225,28 +228,28 @@ while True:
             if (banknifty_ce_ltp<=banknifty_ce_ex and banknifty_ce_hit==False):
                 log_info(log, f'SELL BNF {banknity_atm} CE executed @{banknifty_ce_ltp}', 'sell')
                 sell = banknifty_ce_ltp
-                #client.place_order(order_type = "MIS", instrument_token = banknity_token_ce, transaction_type = "SELL", quantity = 25, price = 0)
+                #client.place_order(order_type = "MIS", instrument_token = banknity_token_ce, transaction_type = "SELL", quantity = quantity, price = 0)
                 banknifty_ce_hit = True
 
             #buy ce if reversal
             if (banknifty_ce_hit==True and banknifty_ce_ltp>=1.25*banknifty_ce_ex and banknifty_ce_wrong==False):
                 log_info(log, f'BUY BNF {banknity_atm} CE executed @{banknifty_ce_ltp}', 'buy')
                 buy = banknifty_ce_ltp
-                #client.place_order(order_type = "MIS", instrument_token = banknity_token_ce, transaction_type = "BUY", quantity = 25, price = 0)
+                #client.place_order(order_type = "MIS", instrument_token = banknity_token_ce, transaction_type = "BUY", quantity = quantity, price = 0)
                 banknifty_ce_wrong = True
 
             #sell pe when execution price is hit for the first time
             if (banknifty_pe_ltp<=banknifty_pe_ex and banknifty_pe_hit==False):
                 log_info(log, f'SELL BNF {banknity_atm} PE executed @{banknifty_pe_ltp}', 'sell')
                 sell = banknifty_pe_ltp
-                #client.place_order(order_type = "MIS", instrument_token = banknity_token_pe, transaction_type = "SELL", quantity = 25, price = 0)
+                #client.place_order(order_type = "MIS", instrument_token = banknity_token_pe, transaction_type = "SELL", quantity = quantity, price = 0)
                 banknifty_pe_hit = True
 
             #buy pe if reversal
             if (banknifty_pe_hit==True and banknifty_pe_ltp>=1.25*banknifty_pe_ex and banknifty_pe_wrong==False):
                 log_info(log, f'BUY BNF {banknity_atm} PE executed @{banknifty_pe_ltp}', 'buy')
                 buy = banknifty_pe_ltp
-                #client.place_order(order_type = "MIS", instrument_token = banknity_token_pe, transaction_type = "BUY", quantity = 25, price = 0)
+                #client.place_order(order_type = "MIS", instrument_token = banknity_token_pe, transaction_type = "BUY", quantity = quantity, price = 0)
                 banknifty_pe_wrong = True
 
             #At 3pm
@@ -257,13 +260,13 @@ while True:
                 if( banknifty_ce_hit==True and banknifty_ce_wrong==False ):
                     log_info(log, f'SQUAREOFF BUY BNF {banknity_atm} CE executed @{banknifty_ce_ltp}', 'squareoff')
                     buy = banknifty_ce_ltp
-                    #client.place_order(order_type = "MIS", instrument_token = banknity_token_ce, transaction_type = "BUY", quantity = 25, price = 0)
+                    #client.place_order(order_type = "MIS", instrument_token = banknity_token_ce, transaction_type = "BUY", quantity = quantity, price = 0)
 
                 #buy pe to square off
                 if( banknifty_pe_hit==True and banknifty_pe_wrong==False ):
                     log_info(log, f'SQUAREOFF BUY BNF {banknity_atm} PE executed @{banknifty_pe_ltp}', 'squareoff')
                     buy = banknifty_pe_ltp
-                    #client.place_order(order_type = "MIS", instrument_token = banknity_token_pe, transaction_type = "BUY", quantity = 25, price = 0)  
+                    #client.place_order(order_type = "MIS", instrument_token = banknity_token_pe, transaction_type = "BUY", quantity = quantity, price = 0)  
 
                 log_info(log, 'After 3pm procedure completed', 'sys_alert')
 
@@ -272,7 +275,8 @@ while True:
             #After 3pm
             if( firstat3==False and firstat305==True):
                 #log and print end of at 3:05pm procedure
-                log_info(log, f'p&l today @{sell-buy}')
+                log_info(log, f'p&l per unit today @{sell-buy}')
+                log_info(log, f'p&l total({quantity}) today @{(sell-buy)*quantity}')
                 log_info(log, 'After 3pm procedure completed', 'sys_alert')
                 log.close()
                 firstat305==False

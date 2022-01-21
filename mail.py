@@ -11,7 +11,7 @@ import os
 from helper import log_dir
 import datetime
 
-def mail(fromaddr = "princessbananahammock1999@gmail.com", toaddr = "toharshrocks1@gmail.com", password="myraa1sep2020"):
+def mail(fromaddr = "princessbananahammock1999@gmail.com", toaddr = ["toharshrocks1@gmail.com","manjushreefinserve@gmail.com"], password="myraa1sep2020"):
     # instance of MIMEMultipart
     msg = MIMEMultipart()
 
@@ -22,7 +22,7 @@ def mail(fromaddr = "princessbananahammock1999@gmail.com", toaddr = "toharshrock
     msg['To'] = toaddr
 
     # storing the subject
-    msg['Subject'] = datetime.datetime.now().strftime("%m-%d-%Y")
+    msg['Subject'] = 'BNF FnO Report: ' + datetime.datetime.now().strftime("%m-%d-%Y")
 
     # string to store the body of the mail
     body = "Today's report"
@@ -79,7 +79,11 @@ def mail(fromaddr = "princessbananahammock1999@gmail.com", toaddr = "toharshrock
     text = msg.as_string()
 
     # sending the mail
-    s.sendmail(fromaddr, toaddr, text)
+    if isinstance(toaddr,str):
+        s.sendmail(fromaddr, toaddr, text)
+    else:
+        for i in toaddr:
+            s.sendmail(fromaddr, i, text)
 
     # terminating the session
     s.quit()
