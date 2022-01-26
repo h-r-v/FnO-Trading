@@ -128,6 +128,10 @@ firstat930 = True
 firstat3 = True
 firstat305 = True
 
+#thresholds
+slt = 1.3 #stop loss = slt * execution price
+ext = 0.9 #execution price = ext * price at 9:30
+
 #p&l vars
 sell = 0
 buy = 0
@@ -193,16 +197,16 @@ while True:
             log_info(log, f'BNF {banknity_atm} PE 9:30 am LTP @{banknifty_pe_ltp_930}', 'ltp_alert')
 
             #get execution price
-            banknifty_ce_ex = 0.9*banknifty_ce_ltp_930
-            banknifty_pe_ex = 0.9*banknifty_pe_ltp_930
+            banknifty_ce_ex = ext*banknifty_ce_ltp_930
+            banknifty_pe_ex = ext*banknifty_pe_ltp_930
 
             #log and print CE execution price and stop loss
             log_info(log, f'BNF {banknity_atm} CE execution price set @{banknifty_ce_ex}', 'execution_price')
-            log_info(log, f'BNF {banknity_atm} CE stop loss set @{1.25*banknifty_ce_ex}', 'stop_loss')
+            log_info(log, f'BNF {banknity_atm} CE stop loss set @{slt*banknifty_ce_ex}', 'stop_loss')
             
             #log and print PE execution price
             log_info(log, f'BNF {banknity_atm} PE execution price set @{banknifty_pe_ex}', 'execution_price')
-            log_info(log, f'BNF {banknity_atm} PE stop loss set @{1.25*banknifty_pe_ex}', 'stop_loss')
+            log_info(log, f'BNF {banknity_atm} PE stop loss set @{slt*banknifty_pe_ex}', 'stop_loss')
 
             #log and print end of 9:30am procedure
             log_info(log, f'At 9:30am procedure completed', 'sys_alert')
@@ -232,7 +236,7 @@ while True:
                 banknifty_ce_hit = True
 
             #buy ce if reversal
-            if (banknifty_ce_hit==True and banknifty_ce_ltp>=1.25*banknifty_ce_ex and banknifty_ce_wrong==False):
+            if (banknifty_ce_hit==True and banknifty_ce_ltp>=slt*banknifty_ce_ex and banknifty_ce_wrong==False):
                 log_info(log, f'BUY BNF {banknity_atm} CE executed @{banknifty_ce_ltp}', 'buy')
                 buy = banknifty_ce_ltp
                 #client.place_order(order_type = "MIS", instrument_token = banknity_token_ce, transaction_type = "BUY", quantity = quantity, price = 0)
@@ -246,7 +250,7 @@ while True:
                 banknifty_pe_hit = True
 
             #buy pe if reversal
-            if (banknifty_pe_hit==True and banknifty_pe_ltp>=1.25*banknifty_pe_ex and banknifty_pe_wrong==False):
+            if (banknifty_pe_hit==True and banknifty_pe_ltp>=slt*banknifty_pe_ex and banknifty_pe_wrong==False):
                 log_info(log, f'BUY BNF {banknity_atm} PE executed @{banknifty_pe_ltp}', 'buy')
                 buy = banknifty_pe_ltp
                 #client.place_order(order_type = "MIS", instrument_token = banknity_token_pe, transaction_type = "BUY", quantity = quantity, price = 0)
