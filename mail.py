@@ -19,7 +19,7 @@ def mail(fromaddr = "princessbananahammock1999@gmail.com", toaddr = ["toharshroc
     msg['From'] = fromaddr
 
     # storing the receivers email address
-    msg['To'] = toaddr
+    msg['To'] = ','.join(toaddr)
 
     # storing the subject
     msg['Subject'] = 'BNF FnO Report: ' + datetime.datetime.now().strftime("%m-%d-%Y")

@@ -7,7 +7,7 @@ from mail import mail
 #program launch timings
 otp_gen_time = '3-00'
 main_program_start_time = '9-20'
-trade_loop_time = '9-25'
+trade_loop_time = '9-30'
 mail_time = '16-00'
 
 #controller program start hr and min
