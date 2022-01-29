@@ -11,7 +11,7 @@ import os
 from helper import log_dir
 import datetime
 
-def mail(fromaddr = "princessbananahammock1999@gmail.com", toaddr = ["toharshrocks1@gmail.com","manjushreefinserve@gmail.com"], password="myraa1sep2020"):
+def mail(instrument,fromaddr = "princessbananahammock1999@gmail.com", toaddr = ["toharshrocks1@gmail.com","manjushreefinserve@gmail.com"], password="myraa1sep2020"):
     # instance of MIMEMultipart
     msg = MIMEMultipart()
 
@@ -22,7 +22,7 @@ def mail(fromaddr = "princessbananahammock1999@gmail.com", toaddr = ["toharshroc
     msg['To'] = ','.join(toaddr)
 
     # storing the subject
-    msg['Subject'] = 'BNF FnO Report: ' + datetime.datetime.now().strftime("%m-%d-%Y")
+    msg['Subject'] = f'{instrument} FnO Report: ' + datetime.datetime.now().strftime("%m-%d-%Y")
 
     # string to store the body of the mail
     body = "Today's report"
@@ -32,7 +32,7 @@ def mail(fromaddr = "princessbananahammock1999@gmail.com", toaddr = ["toharshroc
 
     # open the file to be sent
     filename = "main.txt"
-    attachment = open(os.path.join(log_dir(),'main.txt'), "rb")
+    attachment = open(os.path.join(log_dir(instrument),'main.txt'), "rb")
 
     # instance of MIMEBase and named as p
     p = MIMEBase('application', 'octet-stream')
@@ -50,7 +50,7 @@ def mail(fromaddr = "princessbananahammock1999@gmail.com", toaddr = ["toharshroc
 
     # open the file to be sent
     filename = "trade.txt"
-    attachment = open(os.path.join(log_dir(),'trade.txt'), "rb")
+    attachment = open(os.path.join(log_dir(instrument),'trade.txt'), "rb")
 
     # instance of MIMEBase and named as p
     p = MIMEBase('application', 'octet-stream')

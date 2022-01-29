@@ -1,42 +1,56 @@
 usage='''
 Usage:
-    main.py [--sandbox] [--get_otp] [--otp=<otp>] [--time=<time>]
+    main.py [--instrument=<instrument>] [--sandbox] [--get_otp] [--otp=<otp>] [--start_time=<start_time>] [--end_time=<end_time>] [--n=<n>]
 
 Options:
-    --otp=<otp>     OTP [default: 1111], ignored if get_otp is chosen
-    --prod          use sandbox enviorment
-    --get_otp       us to generate otp.
-    --time=<time>   main loop start time in h-m format. [default: 9-30]  
+    --instrument=<instrument>   target instrument. Ex: banknifty, nifty, etc
+    --otp=<otp>                 OTP [default: 1111], ignored if get_otp is chosen
+    --sandbox                   use sandbox enviorment
+    --get_otp                   us to generate otp.
+    --start_time=<start_time>   main loop start time in h-m format. [default: 9-30]
+    --end_time=<end_time>       main loop start time in h-m format. [default: 15-00]
+    --n=<n>                     number of lots. Ex:25, 20 [default: 25]  
 '''
 #---------------------------------CLI & INIT---------------------------------
+from ast import arg
 from docopt import docopt
 from helper import *
+from config import *
 
 args = docopt(usage)
 
-sandbox = args['--sandbox'] #True if you want to use sandbox enviorment. False to use production enviorment.
+run_env = 'test' if args['--sandbox'] else 'prod' #True if you want to use sandbox enviorment. False to use production enviorment.
 get_access_only = args['--get_otp'] #True if you want to generate the OTP onlt. Flase if you want to execute the entire program.
 access_code = args['--otp'] #OTP
-main_loop_start_time = args['--time']
+start_time = args['--start_time']
+end_time = args['--end_time']
+instrument = args['--instrument']
+
+#number of shares
+quantity = args['--n']
 
 #get log dir
-logdir = log_dir()
+logdir = log_dir(instrument)
+
+#checking and mapping to names that are in cash token df
+if instrument in ['banknifty', 'nifty50'] or get_access_only:
+    if instrument == 'banknifty':
+        instrument = 'NIFTY BANK'
+    elif instrument == 'nifty50':
+        instrument = 'NIFTY 50'
+else:
+    from shutil import rmtree
+    rmtree(logdir)
+    exit(1)
 
 #creating log file
 log = open(os.path.join(logdir,'trade.txt'), "a")
 
-if sandbox==False:
-    userid = "NT1945"
-    password='BT121299@'
-    access_token = "3bf7af61-77c2-3f2e-b1c1-f4f5cb909db3"
-    consumer_key = "ay4bObamN3KHOPzZjmpA7g9YDJwa"
-    host = 'https://tradeapi.kotaksecurities.com/apim'
-else:
-    userid = "1T068"
-    password='login@1'
-    access_token = "ebe9c833-26c1-3402-bf80-c457e76a4da3"
-    consumer_key = "a0s3dcOM4JgVNn3pB7fdLBFkJ4Ea"
-    host = 'https://sbx.kotaksecurities.com/apim'
+userid ,password, access_token ,consumer_key ,host = [None]*5
+
+#loading credentials
+for i in trade_config[run_env].items():
+    exec(f"{i[0]}='{i[1]}'")
 
 #---------------------------------GENERATING OTP---------------------------------
 from ks_api_client.ks_api import KSTradeApi
@@ -47,24 +61,24 @@ try:
     client.login(password=password)
     log_info(log, 'OTP Generated', 'otp_gen_succ')
 except Exception as e:
-    log_info(log, f'Could not generate OTP. Error: {e}', 'otp_gen_error')
+    log_info(log, f'Could not generate OTP. Error: {e}', 'ERROR: otp_gen_error')
     log.close()
-    exit()
+    exit(1)
 
 #---------------------------------OTP VERIFICATION---------------------------------
 if get_access_only==True:
-    exit()
+    exit(0)
 
 try:
-    if sandbox==True:
+    if run_env=='test':
         client.session_2fa(access_code = '1111')
     else:
         client.session_2fa(access_code = access_code)
     log_info(log, 'OTP Verified', 'otp_ver_succ')
 except Exception as e:
-    log_info(log, f'Could not verify OTP. Error: {e}', 'otp_ver_error')
+    log_info(log, f'Could not verify OTP. Error: {e}', 'ERROR: otp_ver_error')
     log.close()
-    exit()
+    exit(1)
 
 #---------------------------------Get TOKEN LIST---------------------------------
 from datetime import datetime
@@ -79,8 +93,8 @@ fno_tokens = requests.get(fno_url)
 cash_tokens = requests.get(cash_url)
 
 if fno_tokens.status_code!=200 or cash_tokens.status_code!=200:
-    log_info(log, 'Could not get token data.', 'token_error')
-    exit()
+    log_info(log, 'Could not get token data.', 'ERROR: token_error')
+    exit(1)
 else:
     log_info(log, 'Token data accquired.', 'token_succ')
 
@@ -93,8 +107,8 @@ cash_tokens = cash_tokens.split('\n')
 cash_tokens = [i.strip().split('|') for i in cash_tokens]
 
 if len(fno_tokens) <= 1 or len(cash_tokens) <= 1:
-    log_info(log, "Token list not valid", 'token_error')
-    exit()
+    log_info(log, "Token list not valid", 'ERROR: token_error')
+    exit(1)
 else:
     log_info(log, 'Token data successful.', 'token_succ')
 
@@ -107,18 +121,21 @@ cash_df = pd.DataFrame( cash_tokens[1:], columns=cash_tokens[0])
 log_info(log, f"FnO DF shape: {fno_df.shape}", 'df_shape')
 log_info(log, f"Cash DF shape: {cash_df.shape}", 'df_shape')
 
-#---------------------------------BANKNIFTY TOKEN---------------------------------
-banknifty_token = int(cash_df[cash_df.instrumentName=='NIFTY BANK'].instrumentToken.values[0])
-log_info(log, f"BANK NIFTY TOKEN: {banknifty_token}", 'bnf_token')
+#---------------------------------INSTRUMENT TOKEN---------------------------------
+instrument_token = int(cash_df[cash_df.instrumentName==instrument].instrumentToken.values[0])
+log_info(log, f"{instrument} TOKEN: {instrument_token}", 'instrument_token')
 
 #---------------------------------Time loop---------------------------------
 from datetime import datetime
 import os
 
+#init time vars
 old_second = 70
+time_diff = 10
 
-#main loop execution time
-_hour, _min = [int(i) for i in main_loop_start_time.split('-')]
+#main loop time vars
+start_hour, start_min = [int(i) for i in start_time.split('-')] # controls stage 1,2,3
+end_hour, end_min = [int(i) for i in end_time.split('-')] # controls stage 4,5
 
 #first execution flags
 firstafter930 = True
@@ -133,17 +150,27 @@ slt = 1.3 #stop loss = slt * execution price
 ext = 0.9 #execution price = ext * price at 9:30
 
 #p&l vars
-sell = 0
-buy = 0
+sell_ce = 0
+buy_ce = 0
+sell_pe = 0
+buy_pe = 0
 
-#number of shares
-quantity = 25
+#fail counts catch
+ltp_fail_c = 0
+
+'''
+STAGE 1: At 9:25am: get atm, get ce/pe token, init flags
+STAGE 2: At 9:30am: get pe/ce quote to calculate SL and EX
+STAGE 3: After 9:30am: get pe/ce quote, see if criteras to buy/sell are met
+STAGE 4: At 3pm: squareoff
+STAGE 5: After 3pm: calc pnl
+'''
 
 while True:
     
     hour, minute, second = [int(i) for i in datetime.now().strftime("%H.%M.%S").split('.')]
     
-    if( (old_second+3)%60==second or firstTL):
+    if( (old_second+time_diff)%60==second or firstTL):
         print(f'{hour}:{minute}:{second} : Time loop working')
 
         #log and print time loop start
@@ -154,138 +181,142 @@ while True:
         #update time
         old_second=second
         
-        #At 9:25am
-        if(hour==_hour and minute==_min-1 and firstat925==True):
-            #log and print start of 9:25am procedure
-            log_info(log, 'Executing before 9:25am procedure', 'sys_alert')
+        #STAGE 1
+        if(hour==start_hour and minute==start_min-1 and firstat925==True):
+            #log and print start of STAGE 1
+            log_info(log, 'Executing STAGE 1 procedure', 'sys_alert')
 
-            #get banknifty atm
-            banknity_atm = get_atm(banknifty_token, client)
+            #get instrument atm
+            instrument_atm = get_atm(instrument_token, client)
             
             
-            #log and print banknifty atm
-            log_info(log,f"BNF ATM @{banknity_atm}",'strike_price')
+            #log and print instrument atm
+            log_info(log,f"{instrument} ATM @{instrument_atm}",'strike_price')
 
             #get and log pe and ce token at that atm
-            banknity_token_pe, banknity_token_ce = get_pe_ce_token(banknity_atm, fno_df)
-            log_info(log,f"BNF CE TOKEN @{banknity_token_ce}",'bnf_ce_token')
-            log_info(log,f"BNF PE TOKEN @{banknity_token_pe}",'bnf_pe_token')
+            instrument_token_pe, instrument_token_ce = get_pe_ce_token(instrument ,instrument_atm, fno_df)
+            log_info(log,f"{instrument} CE TOKEN @{instrument_token_ce}",'instrument_ce_token')
+            log_info(log,f"{instrument} PE TOKEN @{instrument_token_pe}",'instrument_pe_token')
 
             #initialize hit flags
-            banknifty_ce_hit = False
-            banknifty_pe_hit = False
-            banknifty_ce_wrong = False
-            banknifty_pe_wrong = False
+            instrument_ce_hit = False
+            instrument_pe_hit = False
+            instrument_ce_wrong = False
+            instrument_pe_wrong = False
 
-            #log and print end of 9:25am procedure
-            log_info(log, f"Before 9:25am procedure completed", 'sys_alert')
+            #log and print end of STAGE 1
+            log_info(log, f"STAGE 1 procedure completed", 'sys_alert')
             firstat925 = False
 
-        #At 9:30am
-        if(hour==_hour and minute==_min and firstat930==True):
+        #STAGE 2
+        if(hour==start_hour and minute==start_min and firstat930==True):
             #log and print start of 9:30am procedure
-            log_info(log,'Executing at 9:30am procedure','sys_alert')
+            log_info(log,'Executing STAGE 2 procedure','sys_alert')
 
             #get ce and pe quote
-            banknifty_ce_ltp_930 = get_quote(banknity_token_ce, client)
-            banknifty_pe_ltp_930 = get_quote(banknity_token_pe, client)
+            try:
+                instrument_ce_ltp_930 = get_quote(instrument_token_ce, client)
+                instrument_pe_ltp_930 = get_quote(instrument_token_pe, client)
+                ltp_fail_c = max(0,ltp_fail_c-1)
+            except Exception as e:
+                log_info( log, e,'ERROR: ltp_error')
+                ltp_fail_c += 1
+                if ltp_fail_c >= int((60*10)/time_diff):
+                    log_info( log, f'LTP fail threshold reached({ltp_fail_c})','ERROR: ltp_error')
+                    exit(1)
 
             #log and print CE LTP @9:30am
-            log_info(log, f'BNF {banknity_atm} CE 9:30 am LTP @{banknifty_ce_ltp_930}', 'ltp_alert')
+            log_info(log, f'{instrument} {instrument_atm} CE 9:30 am LTP @{instrument_ce_ltp_930}', 'ltp_alert')
             
             #log and print PE LTP @9:30am
-            log_info(log, f'BNF {banknity_atm} PE 9:30 am LTP @{banknifty_pe_ltp_930}', 'ltp_alert')
+            log_info(log, f'{instrument} {instrument_atm} PE 9:30 am LTP @{instrument_pe_ltp_930}', 'ltp_alert')
 
             #get execution price
-            banknifty_ce_ex = ext*banknifty_ce_ltp_930
-            banknifty_pe_ex = ext*banknifty_pe_ltp_930
+            instrument_ce_ex = ext*instrument_ce_ltp_930
+            instrument_pe_ex = ext*instrument_pe_ltp_930
 
             #log and print CE execution price and stop loss
-            log_info(log, f'BNF {banknity_atm} CE execution price set @{banknifty_ce_ex}', 'execution_price')
-            log_info(log, f'BNF {banknity_atm} CE stop loss set @{slt*banknifty_ce_ex}', 'stop_loss')
+            log_info(log, f'{instrument} {instrument_atm} CE execution price set @{instrument_ce_ex}', 'execution_price')
+            log_info(log, f'{instrument} {instrument_atm} CE stop loss set @{slt*instrument_ce_ex}', 'stop_loss')
             
             #log and print PE execution price
-            log_info(log, f'BNF {banknity_atm} PE execution price set @{banknifty_pe_ex}', 'execution_price')
-            log_info(log, f'BNF {banknity_atm} PE stop loss set @{slt*banknifty_pe_ex}', 'stop_loss')
+            log_info(log, f'{instrument} {instrument_atm} PE execution price set @{instrument_pe_ex}', 'execution_price')
+            log_info(log, f'{instrument} {instrument_atm} PE stop loss set @{slt*instrument_pe_ex}', 'stop_loss')
 
             #log and print end of 9:30am procedure
-            log_info(log, f'At 9:30am procedure completed', 'sys_alert')
+            log_info(log, f'STAGE 2 procedure completed', 'sys_alert')
             firstat930=False
 
-        #After 9:30am
-        if(hour>=_hour and firstat930==False):
-            log_info(log, f'After 9:30 executed', 'sys_alert')
+        #STAGE 3
+        if(hour>=start_hour and firstat930==False):
 
             if firstafter930==True:
-                #log and print start of after 9:30am procedure
-                log_info(log, "Executing after 9:30am procedure", 'sys_alert')
+                #log and print start of STAGE 3 procedure
+                log_info(log, "Executing STAGE 3 procedure", 'sys_alert')
                 firstafter930 = False
 
-            #Get LTP for CE and PE every second after 9:30am
-            banknifty_ce_ltp = get_quote(banknity_token_ce, client)
-            banknifty_pe_ltp = get_quote(banknity_token_pe, client)
+            #Get LTP for CE and PE every time_diff second
+            instrument_ce_ltp = get_quote(instrument_token_ce, client)
+            instrument_pe_ltp = get_quote(instrument_token_pe, client)
 
-            log_info(log, f'banknifty_ce_ltp @{banknifty_ce_ltp}','ltp_alert')
-            log_info(log, f'banknifty_pe_ltp @{banknifty_pe_ltp}','ltp_alert')
+            log_info(log, f'instrument_ce_ltp @{instrument_ce_ltp}','ltp_alert')
+            log_info(log, f'instrument_pe_ltp @{instrument_pe_ltp}','ltp_alert')
 
             #sell ce when execution price is hit for the first time
-            if (banknifty_ce_ltp<=banknifty_ce_ex and banknifty_ce_hit==False):
-                log_info(log, f'SELL BNF {banknity_atm} CE executed @{banknifty_ce_ltp}', 'sell')
-                sell = banknifty_ce_ltp
-                #client.place_order(order_type = "MIS", instrument_token = banknity_token_ce, transaction_type = "SELL", quantity = quantity, price = 0)
-                banknifty_ce_hit = True
+            if (instrument_ce_ltp<=instrument_ce_ex and instrument_ce_hit==False):
+                log_info(log, f'SELL {instrument} {instrument_atm} CE executed @{instrument_ce_ltp}', 'sell')
+                sell_ce = instrument_ce_ltp
+                #client.place_order(order_type = "MIS", instrument_token = instrument_token_ce, transaction_type = "SELL", quantity = quantity, price = 0)
+                instrument_ce_hit = True
 
             #buy ce if reversal
-            if (banknifty_ce_hit==True and banknifty_ce_ltp>=slt*banknifty_ce_ex and banknifty_ce_wrong==False):
-                log_info(log, f'BUY BNF {banknity_atm} CE executed @{banknifty_ce_ltp}', 'buy')
-                buy = banknifty_ce_ltp
-                #client.place_order(order_type = "MIS", instrument_token = banknity_token_ce, transaction_type = "BUY", quantity = quantity, price = 0)
-                banknifty_ce_wrong = True
+            if (instrument_ce_hit==True and instrument_ce_ltp>=slt*instrument_ce_ex and instrument_ce_wrong==False):
+                log_info(log, f'BUY {instrument} {instrument_atm} CE executed @{instrument_ce_ltp}', 'buy')
+                buy_ce = instrument_ce_ltp
+                #client.place_order(order_type = "MIS", instrument_token = instrument_token_ce, transaction_type = "BUY", quantity = quantity, price = 0)
+                instrument_ce_wrong = True
 
             #sell pe when execution price is hit for the first time
-            if (banknifty_pe_ltp<=banknifty_pe_ex and banknifty_pe_hit==False):
-                log_info(log, f'SELL BNF {banknity_atm} PE executed @{banknifty_pe_ltp}', 'sell')
-                sell = banknifty_pe_ltp
-                #client.place_order(order_type = "MIS", instrument_token = banknity_token_pe, transaction_type = "SELL", quantity = quantity, price = 0)
-                banknifty_pe_hit = True
+            if (instrument_pe_ltp<=instrument_pe_ex and instrument_pe_hit==False):
+                log_info(log, f'SELL {instrument} {instrument_atm} PE executed @{instrument_pe_ltp}', 'sell')
+                sell_pe = instrument_pe_ltp
+                #client.place_order(order_type = "MIS", instrument_token = instrument_token_pe, transaction_type = "SELL", quantity = quantity, price = 0)
+                instrument_pe_hit = True
 
             #buy pe if reversal
-            if (banknifty_pe_hit==True and banknifty_pe_ltp>=slt*banknifty_pe_ex and banknifty_pe_wrong==False):
-                log_info(log, f'BUY BNF {banknity_atm} PE executed @{banknifty_pe_ltp}', 'buy')
-                buy = banknifty_pe_ltp
-                #client.place_order(order_type = "MIS", instrument_token = banknity_token_pe, transaction_type = "BUY", quantity = quantity, price = 0)
-                banknifty_pe_wrong = True
+            if (instrument_pe_hit==True and instrument_pe_ltp>=slt*instrument_pe_ex and instrument_pe_wrong==False):
+                log_info(log, f'BUY {instrument} {instrument_atm} PE executed @{instrument_pe_ltp}', 'buy')
+                buy_pe = instrument_pe_ltp
+                #client.place_order(order_type = "MIS", instrument_token = instrument_token_pe, transaction_type = "BUY", quantity = quantity, price = 0)
+                instrument_pe_wrong = True
 
-            #At 3pm
-            if(hour==15 and minute==3 and firstat3==True):
-                log_info(log, 'At 3pm procedure started', 'sys_alert')
+            #STAGE 4
+            if(hour==end_hour and minute==end_min and firstat3==True):
+                log_info(log, 'STAGE 4 procedure started', 'sys_alert')
 
                 #buy ce to square off
-                if( banknifty_ce_hit==True and banknifty_ce_wrong==False ):
-                    log_info(log, f'SQUAREOFF BUY BNF {banknity_atm} CE executed @{banknifty_ce_ltp}', 'squareoff')
-                    buy = banknifty_ce_ltp
-                    #client.place_order(order_type = "MIS", instrument_token = banknity_token_ce, transaction_type = "BUY", quantity = quantity, price = 0)
+                if( instrument_ce_hit==True and instrument_ce_wrong==False ):
+                    log_info(log, f'SQUAREOFF BUY {instrument} {instrument_atm} CE executed @{instrument_ce_ltp}', 'squareoff')
+                    buy_ce = instrument_ce_ltp
+                    #client.place_order(order_type = "MIS", instrument_token = instrument_token_ce, transaction_type = "BUY", quantity = quantity, price = 0)
 
                 #buy pe to square off
-                if( banknifty_pe_hit==True and banknifty_pe_wrong==False ):
-                    log_info(log, f'SQUAREOFF BUY BNF {banknity_atm} PE executed @{banknifty_pe_ltp}', 'squareoff')
-                    buy = banknifty_pe_ltp
-                    #client.place_order(order_type = "MIS", instrument_token = banknity_token_pe, transaction_type = "BUY", quantity = quantity, price = 0)  
+                if( instrument_pe_hit==True and instrument_pe_wrong==False ):
+                    log_info(log, f'SQUAREOFF BUY {instrument} {instrument_atm} PE executed @{instrument_pe_ltp}', 'squareoff')
+                    buy_pe = instrument_pe_ltp
+                    #client.place_order(order_type = "MIS", instrument_token = instrument_token_pe, transaction_type = "BUY", quantity = quantity, price = 0)  
 
-                log_info(log, 'After 3pm procedure completed', 'sys_alert')
+                log_info(log, 'STAGE 4 procedure completed', 'sys_alert')
 
                 firstat3 = False
             
-            #After 3pm
+            #STAGE 5
             if( firstat3==False and firstat305==True):
                 #log and print end of at 3:05pm procedure
-                log_info(log, f'p&l per unit today @{sell-buy}')
-                log_info(log, f'p&l total({quantity}) today @{(sell-buy)*quantity}')
-                log_info(log, 'After 3pm procedure completed', 'sys_alert')
+                log_info(log, 'STAGE 5 procedure started', 'sys_alert')
+                log_info(log, f'p&l per unit today @{(sell_ce-buy_ce)+(sell_pe-buy_pe)}', typ='pnl')    
+                log_info(log, f'p&l total({quantity}) today @{((sell_ce-buy_ce)+(sell_pe-buy_pe))*int(quantity)}', typ='pnl')
+                log_info(log, 'STAGE 5 procedure completed', 'sys_alert')
                 log.close()
                 firstat305==False
-                exit()          
-
-        
-
-        
+                exit(0)
