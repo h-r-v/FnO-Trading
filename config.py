@@ -18,9 +18,17 @@ controller_config = {
         'otp_gen_time':'4-00', 
         'contoller_start_time':'9-40', 
         'mail_time':'16-00'},
-    'test':{ 
+    'banknifty_test':{ 
         'instrument': 'banknifty',
         'n':'25',
+        'trade_start_time':(time_now + timedelta(minutes=3)).strftime('%H-%M'), 
+        'trade_end_time':(time_now + timedelta(minutes=5)).strftime('%H-%M'), 
+        'otp_gen_time':(time_now + timedelta(minutes=1)).strftime('%H-%M'), 
+        'contoller_start_time':(time_now + timedelta(minutes=1)).strftime('%H-%M'), 
+        'mail_time':(time_now + timedelta(minutes=6)).strftime('%H-%M')},
+    'nifty_test':{ 
+        'instrument': 'nifty',
+        'n':'50',
         'trade_start_time':(time_now + timedelta(minutes=3)).strftime('%H-%M'), 
         'trade_end_time':(time_now + timedelta(minutes=5)).strftime('%H-%M'), 
         'otp_gen_time':(time_now + timedelta(minutes=1)).strftime('%H-%M'), 

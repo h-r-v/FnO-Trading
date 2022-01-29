@@ -4,13 +4,23 @@ import os
 from datetime import datetime
 from mail import mail
 from config import *
+from docopt import docopt
 
-instrument='nifty50'
+usage='''
+Usage:
+    main.py [--instrument=<instrument>]
+
+Options:
+    --instrument=<instrument>   target instrument. Ex: banknifty, nifty50 [default: None]
+'''
+
+args = docopt(usage)
+instrument = args['--instrument']
 
 n, trade_start_time, trade_end_time , otp_gen_time, contoller_start_time, mail_time = [None]*6
 
 #loading variables
-for i in controller_config['test'].items():
+for i in controller_config[instrument].items():
     exec(f"{i[0]}='{i[1]}'")
 
 #controller program start hr and min
@@ -41,6 +51,7 @@ while True:
         with open(logfilename, 'a') as lf:
             log_info(lf, 'reset complete', 'daily_reset')
 
+    #if error flag is raised all operations are halted for that day
     if error_flag:
         print('Some error occured. Check log files.')
         continue

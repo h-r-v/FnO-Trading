@@ -13,12 +13,6 @@ def get_atm(instrument_token, client):
     instrument_ltp = float(instrument_ltp)
     instrument_atm = round(instrument_ltp, -2)
 
-    #instrument_atm = 37100
-    #print(f'INSTRUMENT ATM:', instrument_atm)
-    
-    if instrument_atm==0:
-        return 37800
-
     return int(instrument_atm)
 
 # get pe ce tokens for a strike
@@ -32,9 +26,6 @@ def get_pe_ce_token(instrument, instrument_atm, fno_df):
     fno_df = fno_df[ (fno_df.instrumentName == instrument) & (fno_df.strike==str(int(instrument_atm)))][0:2]
     instrument_token_pe = int(fno_df[fno_df.optionType=='PE']['instrumentToken'].values[0])
     instrument_token_ce = int(fno_df[fno_df.optionType=='CE']['instrumentToken'].values[0])
-
-    #print(f"{instrument} {instrument_atm} PE TOKEN:",instrument_token_pe)
-    #print(f"{instrument} {instrument_atm} CE TOKEN:",instrument_token_ce)
     
     return instrument_token_pe,instrument_token_ce
 
@@ -61,7 +52,7 @@ def log_info(opfile, message, typ='UNK', time=None, display=True):
     final_message = json.dumps({'message':str(message), 'type':str(typ), 'time':str(time)})+'\n'
     
     if display:
-        print(f'{time} : {message}')
+        print(f'{time} : {message} : {opfile.name.split("/")[-2]}')
     
     opfile.write(final_message)
 
