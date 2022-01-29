@@ -13,6 +13,9 @@ def get_atm(instrument_token, client):
     instrument_ltp = float(instrument_ltp)
     instrument_atm = round(instrument_ltp, -2)
 
+    if instrument_atm==0:
+        return 37800
+
     return int(instrument_atm)
 
 # get pe ce tokens for a strike
@@ -57,7 +60,13 @@ def log_info(opfile, message, typ='UNK', time=None, display=True):
     opfile.write(final_message)
 
 #return log dir of the day
-def log_dir(sub_dir=''):
+def log_dir(sub_dir, make=False):
+
+    if make==False:
+        p = datetime.now().strftime("%m-%d-%Y")
+        p = os.path.join('logs', p)
+        p = os.path.join(p, sub_dir)
+        return p
 
     #creating log dir
     if not os.path.exists('logs'):

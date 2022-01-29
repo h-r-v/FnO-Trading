@@ -8,19 +8,19 @@ from docopt import docopt
 
 usage='''
 Usage:
-    main.py [--instrument=<instrument>]
+    main.py [--instrument_name=<instrument_name>]
 
 Options:
-    --instrument=<instrument>   target instrument. Ex: banknifty, nifty50 [default: None]
+    --instrument_name=<instrument_name>   target instrument. Ex: banknifty, nifty50 [default: None]
 '''
 
 args = docopt(usage)
-instrument = args['--instrument']
+instrument_name = args['--instrument_name']
 
-n, trade_start_time, trade_end_time , otp_gen_time, contoller_start_time, mail_time = [None]*6
+instrument, n, trade_start_time, trade_end_time , otp_gen_time, contoller_start_time, mail_time = [None]*7
 
 #loading variables
-for i in controller_config[instrument].items():
+for i in controller_config[instrument_name].items():
     exec(f"{i[0]}='{i[1]}'")
 
 #controller program start hr and min
@@ -36,7 +36,7 @@ mail_hr, mail_min = [int(i) for i in mail_time.split('-')]
 otp = None
 otp_gen_flag = False
 mail_flag = False
-logfilename = os.path.join(log_dir(instrument),'main.txt')
+logfilename = os.path.join(log_dir(instrument_name),'main.txt')
 error_flag = False
 
 #controller program inf loop
@@ -53,7 +53,7 @@ while True:
 
     #if error flag is raised all operations are halted for that day
     if error_flag:
-        print('Some error occured. Check log files.')
+        #print('Some error occured. Check log files.')
         continue
 
     #gen otp
@@ -61,7 +61,7 @@ while True:
         with open(logfilename, 'a') as lf:
             try:
                 log_info(lf, 'Generating otp', 'otp_generate')
-                p = os.system(f'python trade_cli.py --instrument="{instrument}" --get_otp')
+                p = os.system(f'python trade_cli.py --instrument_name="{instrument_name}" --get_otp')
                 if p!=0:
                     raise Exception("otp gen failed")
                 otp_gen_flag=True
@@ -88,7 +88,7 @@ while True:
             #trade cli launch
             try:
                 log_info(lf, 'Launching trade_cli','trade_cli_launch')
-                p = os.system(f'python3 trade_cli.py --instrument="{instrument}" --otp="{otp}" --start_time="{trade_start_time}" --end_time="{trade_end_time}" --n="{n}"')
+                p = os.system(f'python3 trade_cli.py --instrument_name="{instrument_name}" --otp="{otp}" --start_time="{trade_start_time}" --end_time="{trade_end_time}" --n="{n}"')
                 if p!=0:
                     raise Exception("trade_cli failed")
                 log_info(lf,'trade_cli terminated', 'trade_cli_stop')
@@ -99,5 +99,5 @@ while True:
     #send mail
     if (hour==mail_hr and minute==mail_min and mail_flag==False) or error_flag:
         print('sending mail')
-        mail(instrument)
+        mail(instrument_name)
         mail_flag = True

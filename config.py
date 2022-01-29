@@ -3,7 +3,7 @@ time_now = datetime.now()
 
 controller_config = { 
     'nifty50':{ 
-        'instrument': 'nifty50',
+        'instrument': 'NIFTY 50',
         'n':'50',
         'trade_start_time':'9-35', 
         'trade_end_time':'3-15', 
@@ -11,7 +11,7 @@ controller_config = {
         'contoller_start_time':'9-30', 
         'mail_time':'16-00'},
     'banknifty':{ 
-        'instrument': 'banknifty',
+        'instrument': 'NIFTY BANK',
         'n':'25',
         'trade_start_time':'9-45', 
         'trade_end_time':'3-00', 
@@ -19,15 +19,15 @@ controller_config = {
         'contoller_start_time':'9-40', 
         'mail_time':'16-00'},
     'banknifty_test':{ 
-        'instrument': 'banknifty',
+        'instrument': 'NIFTY BANK',
         'n':'25',
         'trade_start_time':(time_now + timedelta(minutes=3)).strftime('%H-%M'), 
         'trade_end_time':(time_now + timedelta(minutes=5)).strftime('%H-%M'), 
         'otp_gen_time':(time_now + timedelta(minutes=1)).strftime('%H-%M'), 
         'contoller_start_time':(time_now + timedelta(minutes=1)).strftime('%H-%M'), 
         'mail_time':(time_now + timedelta(minutes=6)).strftime('%H-%M')},
-    'nifty_test':{ 
-        'instrument': 'nifty',
+    'nifty50_test':{ 
+        'instrument': 'NIFTY 50',
         'n':'50',
         'trade_start_time':(time_now + timedelta(minutes=3)).strftime('%H-%M'), 
         'trade_end_time':(time_now + timedelta(minutes=5)).strftime('%H-%M'), 

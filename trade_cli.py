@@ -1,9 +1,9 @@
 usage='''
 Usage:
-    main.py [--instrument=<instrument>] [--sandbox] [--get_otp] [--otp=<otp>] [--start_time=<start_time>] [--end_time=<end_time>] [--n=<n>]
+    main.py [--instrument_name=<instrument_name>] [--sandbox] [--get_otp] [--otp=<otp>] [--start_time=<start_time>] [--end_time=<end_time>] [--n=<n>]
 
 Options:
-    --instrument=<instrument>   target instrument. Ex: banknifty, nifty, etc
+    --instrument_name=<instrument_name>   target instrument. Ex: banknifty, nifty, etc
     --otp=<otp>                 OTP [default: 1111], ignored if get_otp is chosen
     --sandbox                   use sandbox enviorment
     --get_otp                   us to generate otp.
@@ -24,28 +24,26 @@ get_access_only = args['--get_otp'] #True if you want to generate the OTP onlt. 
 access_code = args['--otp'] #OTP
 start_time = args['--start_time']
 end_time = args['--end_time']
-instrument = args['--instrument']
+instrument_name = args['--instrument_name']
 
 #number of shares
 quantity = args['--n']
 
 #get log dir
-logdir = log_dir(instrument)
-
-#checking and mapping to names that are in cash token df
-if instrument in ['banknifty', 'nifty50'] or get_access_only:
-    if instrument == 'banknifty':
-        instrument = 'NIFTY BANK'
-    elif instrument == 'nifty50':
-        instrument = 'NIFTY 50'
-else:
-    from shutil import rmtree
-    rmtree(logdir)
-    exit(1)
+logdir = log_dir(instrument_name)
 
 #creating log file
 log = open(os.path.join(logdir,'trade.txt'), "a")
 
+#getting the instrument according to the instrument_name
+if instrument_name in controller_config:
+    instrument = controller_config[instrument_name]['instrument']
+    log_info(log, 'instrument loaded', 'instrument_load_succ')
+else:
+    log_info(log, 'instrument index miss match', 'ERROR: instrument_error')
+    exit(1)
+
+#init credentials
 userid ,password, access_token ,consumer_key ,host = [None]*5
 
 #loading credentials
@@ -171,7 +169,7 @@ while True:
     hour, minute, second = [int(i) for i in datetime.now().strftime("%H.%M.%S").split('.')]
     
     if( (old_second+time_diff)%60==second or firstTL):
-        print(f'{hour}:{minute}:{second} : Time loop working')
+        print(f'{hour}:{minute}:{second} : Time loop working : {instrument_name}')
 
         #log and print time loop start
         if firstTL==True:
