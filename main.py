@@ -5,7 +5,6 @@ from multiprocessing import Pool
 from config import *
 
 def run(a):
-
     #required to remove log file occupied resource
     time.sleep(a[1])
 

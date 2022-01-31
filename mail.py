@@ -11,7 +11,7 @@ import os
 from helper import log_dir
 import datetime
 
-def mail(instrument,fromaddr = "princessbananahammock1999@gmail.com", toaddr = ["toharshrocks1@gmail.com","manjushreefinserve@gmail.com"], password="myraa1sep2020"):
+def mail(instrument, error_flag,fromaddr = "princessbananahammock1999@gmail.com", toaddr = ["toharshrocks1@gmail.com","manjushreefinserve@gmail.com"], password="myraa1sep2020"):
     # instance of MIMEMultipart
     msg = MIMEMultipart()
 
@@ -22,7 +22,8 @@ def mail(instrument,fromaddr = "princessbananahammock1999@gmail.com", toaddr = [
     msg['To'] = ','.join(toaddr)
 
     # storing the subject
-    msg['Subject'] = f'{instrument} FnO Report: ' + datetime.datetime.now().strftime("%m-%d-%Y")
+    error_flag = 'Error Report' if error_flag else 'FnO Report' 
+    msg['Subject'] = f'{instrument} {error_flag} ' + datetime.datetime.now().strftime("%m-%d-%Y")
 
     # string to store the body of the mail
     body = "Today's report"

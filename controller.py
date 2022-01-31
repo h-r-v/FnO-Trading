@@ -99,5 +99,5 @@ while True:
     #send mail
     if (hour==mail_hr and minute==mail_min and mail_flag==False) or error_flag:
         print('sending mail')
-        mail(instrument_name)
+        mail(instrument_name, error_flag)
         mail_flag = True

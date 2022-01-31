@@ -211,17 +211,9 @@ while True:
             #log and print start of 9:30am procedure
             log_info(log,'Executing STAGE 2 procedure','sys_alert')
 
-            #get ce and pe quote
-            try:
-                instrument_ce_ltp_930 = get_quote(instrument_token_ce, client)
-                instrument_pe_ltp_930 = get_quote(instrument_token_pe, client)
-                ltp_fail_c = max(0,ltp_fail_c-1)
-            except Exception as e:
-                log_info( log, e,'ERROR: ltp_error')
-                ltp_fail_c += 1
-                if ltp_fail_c >= int((60*10)/time_diff):
-                    log_info( log, f'LTP fail threshold reached({ltp_fail_c})','ERROR: ltp_error')
-                    exit(1)
+            #get ce and pe quote @ 9:30
+            instrument_ce_ltp_930 = get_quote(instrument_token_ce, client)
+            instrument_pe_ltp_930 = get_quote(instrument_token_pe, client)
 
             #log and print CE LTP @9:30am
             log_info(log, f'{instrument} {instrument_atm} CE 9:30 am LTP @{instrument_ce_ltp_930}', 'ltp_alert')
@@ -254,8 +246,16 @@ while True:
                 firstafter930 = False
 
             #Get LTP for CE and PE every time_diff second
-            instrument_ce_ltp = get_quote(instrument_token_ce, client)
-            instrument_pe_ltp = get_quote(instrument_token_pe, client)
+            try:
+                instrument_ce_ltp = get_quote(instrument_token_ce, client)
+                instrument_pe_ltp = get_quote(instrument_token_pe, client)
+                ltp_fail_c = max(0,ltp_fail_c-1)
+            except Exception as e:
+                log_info( log, e,'ERROR: ltp_error')
+                ltp_fail_c += 1
+                if ltp_fail_c >= int((60*10)/time_diff):
+                    log_info( log, f'LTP fail threshold reached({ltp_fail_c})','ERROR: ltp_error')
+                    exit(1)
 
             log_info(log, f'instrument_ce_ltp @{instrument_ce_ltp}','ltp_alert')
             log_info(log, f'instrument_pe_ltp @{instrument_pe_ltp}','ltp_alert')
