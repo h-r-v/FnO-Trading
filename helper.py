@@ -60,7 +60,7 @@ def log_info(opfile, message, typ='UNK', time=None, display=True):
     opfile.write(final_message)
 
 #return log dir of the day
-def log_dir(sub_dir, make=False):
+def log_dir(sub_dir, make=True):
 
     if make==False:
         p = datetime.now().strftime("%m-%d-%Y")
@@ -69,23 +69,32 @@ def log_dir(sub_dir, make=False):
         return p
 
     #creating log dir
-    if not os.path.exists('logs'):
-        os.mkdir('logs')
+    try:
+        if not os.path.exists('logs'):
+            os.mkdir('logs')
+    except Exception as e:
+        print('WARNING:', str(e))
     
     #date
     log = datetime.now().strftime("%m-%d-%Y")
 
     #creating date subdir
-    if not os.path.exists(os.path.join('logs',log)):
-        os.mkdir(os.path.join('logs',log))
+    try:
+        if not os.path.exists(os.path.join('logs',log)):
+            os.mkdir(os.path.join('logs',log))
+    except Exception as e:
+        print('WARNING:', str(e))
 
     #log dir for the day
     logdir = os.path.join('logs',log)
 
     if sub_dir != '':
         #creating instrument subdir
-        if not os.path.exists(os.path.join(logdir,sub_dir)):
-            os.mkdir(os.path.join(logdir,sub_dir))
+        try:
+            if not os.path.exists(os.path.join(logdir,sub_dir)):
+                os.mkdir(os.path.join(logdir,sub_dir))
+        except Exception as e:
+            print('WARNING:', str(e))
 
         #log dir for the day
         logdir = os.path.join(logdir,sub_dir)

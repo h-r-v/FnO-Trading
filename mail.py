@@ -11,7 +11,7 @@ import os
 from helper import log_dir
 import datetime
 
-def mail(instrument, error_flag,fromaddr = "princessbananahammock1999@gmail.com", toaddr = ["toharshrocks1@gmail.com","manjushreefinserve@gmail.com"], password="myraa1sep2020"):
+def mail(instrument, error_flag, fromaddr = "princessbananahammock1999@gmail.com", toaddr = ["toharshrocks1@gmail.com","manjushreefinserve@gmail.com"], password="myraa1sep2020"):
     # instance of MIMEMultipart
     msg = MIMEMultipart()
 

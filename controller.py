@@ -48,6 +48,8 @@ while True:
         otp = None
         otp_gen_flag = False
         error_flag = False
+        mail_flag = False
+        logfilename = os.path.join(log_dir(instrument_name),'main.txt')
         with open(logfilename, 'a') as lf:
             log_info(lf, 'reset complete', 'daily_reset')
 
