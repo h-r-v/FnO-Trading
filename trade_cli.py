@@ -251,11 +251,13 @@ while True:
                 instrument_pe_ltp = get_quote(instrument_token_pe, client)
                 ltp_fail_c = max(0,ltp_fail_c-1)
             except Exception as e:
-                log_info( log, e,'ERROR: ltp_error')
+                log_info( log, f'{e} : LTP fail count @{ltp_fail_c}', 'ERROR: ltp_error')
                 ltp_fail_c += 1
                 if ltp_fail_c >= int((60*10)/time_diff):
                     log_info( log, f'LTP fail threshold reached({ltp_fail_c})','ERROR: ltp_error')
                     exit(1)
+                else:
+                    continue
 
             log_info(log, f'instrument_ce_ltp @{instrument_ce_ltp}','ltp_alert')
             log_info(log, f'instrument_pe_ltp @{instrument_pe_ltp}','ltp_alert')
