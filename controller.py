@@ -1,3 +1,5 @@
+print('Contoller Started')
+
 from helper import log_dir, log_info
 from get_otp import get_otp
 import os
@@ -17,14 +19,14 @@ Options:
 args = docopt(usage)
 instrument_name = args['--instrument_name']
 
-instrument, n, trade_start_time, trade_end_time , otp_gen_time, contoller_start_time, mail_time = [None]*7
+instrument, n, trade_start_time, trade_end_time , otp_gen_time, tradecli_start_time, mail_time = [None]*7
 
 #loading variables
 for i in controller_config[instrument_name].items():
     exec(f"{i[0]}='{i[1]}'")
 
 #controller program start hr and min
-start_hr, start_min = [int(i) for i in contoller_start_time.split('-')]
+start_hr, start_min = [int(i) for i in tradecli_start_time.split('-')]
 
 #otp program start hr and min
 otp_hr, otp_min = [int(i) for i in otp_gen_time.split('-')]

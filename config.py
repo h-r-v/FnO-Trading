@@ -8,7 +8,7 @@ controller_config = {
         'trade_start_time':'9-35', 
         'trade_end_time':'15-15', 
         'otp_gen_time':'4-00', 
-        'contoller_start_time':'9-30', 
+        'tradecli_start_time':'9-30', 
         'mail_time':'16-00'},
     'banknifty':{ 
         'instrument': 'NIFTY BANK',
@@ -16,7 +16,7 @@ controller_config = {
         'trade_start_time':'9-45', 
         'trade_end_time':'15-00', 
         'otp_gen_time':'4-00', 
-        'contoller_start_time':'9-40', 
+        'tradecli_start_time':'9-40', 
         'mail_time':'16-00'},
     'banknifty_test':{ 
         'instrument': 'NIFTY BANK',
@@ -24,7 +24,7 @@ controller_config = {
         'trade_start_time':(time_now + timedelta(minutes=3)).strftime('%H-%M'), 
         'trade_end_time':(time_now + timedelta(minutes=5)).strftime('%H-%M'), 
         'otp_gen_time':(time_now + timedelta(minutes=1)).strftime('%H-%M'), 
-        'contoller_start_time':(time_now + timedelta(minutes=1)).strftime('%H-%M'), 
+        'tradecli_start_time':(time_now + timedelta(minutes=1)).strftime('%H-%M'), 
         'mail_time':(time_now + timedelta(minutes=6)).strftime('%H-%M')},
     'nifty50_test':{ 
         'instrument': 'NIFTY 50',
@@ -32,7 +32,7 @@ controller_config = {
         'trade_start_time':(time_now + timedelta(minutes=3)).strftime('%H-%M'), 
         'trade_end_time':(time_now + timedelta(minutes=5)).strftime('%H-%M'), 
         'otp_gen_time':(time_now + timedelta(minutes=1)).strftime('%H-%M'), 
-        'contoller_start_time':(time_now + timedelta(minutes=1)).strftime('%H-%M'), 
+        'tradecli_start_time':(time_now + timedelta(minutes=1)).strftime('%H-%M'), 
         'mail_time':(time_now + timedelta(minutes=6)).strftime('%H-%M')},
     }
 

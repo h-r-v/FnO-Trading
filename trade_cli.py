@@ -1,3 +1,5 @@
+print('Trade Started')
+
 usage='''
 Usage:
     main.py [--instrument_name=<instrument_name>] [--sandbox] [--get_otp] [--otp=<otp>] [--start_time=<start_time>] [--end_time=<end_time>] [--n=<n>]
@@ -12,7 +14,6 @@ Options:
     --n=<n>                     number of lots. Ex:25, 20 [default: 25]  
 '''
 #---------------------------------CLI & INIT---------------------------------
-from ast import arg
 from docopt import docopt
 from helper import *
 from config import *
@@ -20,7 +21,7 @@ from config import *
 args = docopt(usage)
 
 run_env = 'test' if args['--sandbox'] else 'prod' #True if you want to use sandbox enviorment. False to use production enviorment.
-get_access_only = args['--get_otp'] #True if you want to generate the OTP onlt. Flase if you want to execute the entire program.
+get_otp_only = args['--get_otp'] #True if you want to generate the OTP onlt. Flase if you want to execute the entire program.
 access_code = args['--otp'] #OTP
 start_time = args['--start_time']
 end_time = args['--end_time']
@@ -57,14 +58,15 @@ try:
     client = KSTradeApi(access_token = access_token, userid = userid, \
                     consumer_key = consumer_key, ip = "127.0.0.1", app_id = "DefaultApplication", host = host)
     client.login(password=password)
-    log_info(log, 'OTP Generated', 'otp_gen_succ')
+    if get_otp_only:
+        log_info(log, 'OTP Generated trade', 'otp_gen_succ')
 except Exception as e:
     log_info(log, f'Could not generate OTP. Error: {e}', 'ERROR: otp_gen_error')
     log.close()
     exit(1)
 
 #---------------------------------OTP VERIFICATION---------------------------------
-if get_access_only==True:
+if get_otp_only==True:
     exit(0)
 
 try:
@@ -180,7 +182,7 @@ while True:
         old_second=second
         
         #STAGE 1
-        if(hour==start_hour and minute==start_min-1 and firstat925==True):
+        if(hour==start_hour and minute==start_min and firstat925==True):
             #log and print start of STAGE 1
             log_info(log, 'Executing STAGE 1 procedure', 'sys_alert')
 
@@ -207,7 +209,7 @@ while True:
             firstat925 = False
 
         #STAGE 2
-        if(hour==start_hour and minute==start_min and firstat930==True):
+        if(hour==start_hour and minute==start_min and firstat930==True and firstat925==False):
             #log and print start of 9:30am procedure
             log_info(log,'Executing STAGE 2 procedure','sys_alert')
 
