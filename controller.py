@@ -1,5 +1,6 @@
 print('Contoller Started')
 
+from time import time, sleep
 from helper import log_dir, log_info
 from get_otp import get_otp
 import os
@@ -72,7 +73,16 @@ while True:
                 log_info(lf, 'OTP generated', 'otp_gen')
             except Exception as e:
                 log_info(lf, e, 'ERROR: otp_gen')
-                error_flag = True
+                c = 60
+                s = 10
+                p = 1
+                log_info(lf, f'Trying to gen otp {c} times at an interval of {s} seconds', 'otp_gen_retry')
+                for i in range(c):
+                    p = min(os.system(f'python trade_cli.py --instrument_name="{instrument_name}" --get_otp'), p)
+                    sleep(s)
+                
+                if p != 0:    
+                    error_flag = True
                 
 
     #every day at main program start time
